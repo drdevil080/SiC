@@ -1,18 +1,17 @@
 /**
   ******************************************************************************
   * File Name          : main.c
-	
-	Main program for SiC in Space experiment. 
-	
-	This is a test progam that will test the functionality of SiC.
-	
-	
-	Refer to the Diptrace files for schematics and PCB design for 
-	further pin connections. 
-	
+  * Description        : Test program that will simulate the OBC onboard the MIST Satellite
   ******************************************************************************
   *
-  * COPYRIGHT(c) 2016 STMicroelectronics
+
+
+
+    This is a test program which has the purpose to simulate the OBC onboard the MIST satellite.
+    The main program will start sending commands via I2C to the SiC MCU for which message it 
+    sends will test the functions that are implemented on the hardware of the SiC PCB.
+
+  * COPYRIGHT(c) 2017 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -38,44 +37,56 @@
   *
   ******************************************************************************
   */
-
 /* Includes ------------------------------------------------------------------*/
-#include <stdbool.h>
-#include "stm32l0xx_hal.h"
-#include "adc.h"
-#include "dac.h"
-#include "i2c.h"
-#include "iwdg.h"
-#include "gpio.h"
-#include "headers.h"
+#include "main.h"
+#include "stm32f3xx_hal.h"
+#include "functions.h"
+
+/* USER CODE BEGIN Includes */
+
+
+/* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
-/* External variables*/
-extern ADC_ChannelConfTypeDef        sConfigAdc;
-extern DAC_ChannelConfTypeDef 			 sConfigDac;
-extern ADC_HandleTypeDef             hadc;
-extern DAC_HandleTypeDef    				 hdac;
-extern I2C_HandleTypeDef 							hi2c1;
-experiment_package  	 experiments[8];
-uint8_t aRxBuffer[RXBUFFERSIZE];
+ADC_HandleTypeDef hadc1;
+
+DAC_HandleTypeDef hdac;
+
+I2C_HandleTypeDef hi2c1;
+
+/* USER CODE BEGIN PV */
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+void Error_Handler(void);
+static void MX_GPIO_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_DAC_Init(void);
+static void MX_I2C1_Init(void);
+
+/* USER CODE BEGIN PFP */
+/* Private function prototypes -----------------------------------------------*/
+extern experiment_package experiments[8];
 
 
-/*
-    PA0     ------> ADC_IN0
-    PA1     ------> ADC_IN1
-    PA2     ------> ADC_IN2
-    PA3     ------> ADC_IN3
-    PA5     ------> ADC_IN5
-    PA6     ------> ADC_IN6
-    PA7     ------> ADC_IN7
-    PB0     ------> ADC_IN8
-    PB1     ------> ADC_IN9 
-		*/
+/* USER CODE END PFP */
 
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
 
 int main(void)
 {
-	
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration----------------------------------------------------------*/
+
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
@@ -84,250 +95,22 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC_Init();
+  MX_ADC1_Init();
   MX_DAC_Init();
   MX_I2C1_Init();
-  MX_IWDG_Init();
 
-
-	while(1)
-		{
-		Flush_Buffer((uint8_t *)aRxBuffer,RXBUFFERSIZE);	  //Flush the buffer so the OBC can send message
-		receive_OBC_message();															//Receive instructions from the OBC
-		check_OBC_message();																//Check instructions from the OBC
-			
-	
-	}
-		
-}
-/*Start experiment run and performe 4 readings and send them to the OBC*/
-void StartExperiments()
-	{					
-  
-	setDAC(0);
-	HAL_Delay(2);
-		
-	/* Set DAC at voltage level 1 (3.1v 0xF07)*/
-	setDAC(3.1);
-	HAL_Delay(2);
-	for(int i = 0; i < 16; i++){ 
-		readRollingADC(0); //All inputs 16 times.
-	}		
-	setDAC(0);
-	HAL_Delay(2);
-		/* Set DAC at voltage level 1 (2.1v 0xA2E)*/
-	setDAC(2.1);
-	HAL_Delay(2);
-	for(int i = 0; i < 16; i++){
-		readRollingADC(1);
-	}
-
-		setDAC(0);
-	HAL_Delay(2);
-		/* Set DAC at voltage level 1 (1.1v 0x555)*/
-	setDAC(1.1);
-	HAL_Delay(2);
-	for(int i = 0; i < 16; i++){
-		
-		readRollingADC(2);
-	}
-	setDAC(0);
-	HAL_Delay(2);
-		/* Set DAC at voltage level 1 (0.5v 0x260)*/
-	setDAC(0.5);
-	HAL_Delay(2);
-	for(int i = 0; i < 16; i++)			
-	{
-		
-		readRollingADC(3);
-	}
-	/*This value are used to test the I2C communication*/
-	/*	experiments[0].temperature =1567; // Value for 0 celsius
-		experiments[0].ube = 3.1;
-		experiments[0].vrb = 4.2;
-		experiments[0].vrc = 5.3;
-	
-		experiments[1].temperature = 1486;  //Value for 10 Celsius
-		experiments[1].ube = 7;
-		experiments[1].vrb = 8;
-		experiments[1].vrc = 9;
-	
-		experiments[2].temperature = 737;  // Value for 100 Celcius
-		experiments[2].ube = 11;
-		experiments[2].vrb = 12;
-		experiments[2].vrc = 13;
-	
-	experiments[3].temperature = 2000;  // Value out of range
-		experiments[3].ube = 11;
-		experiments[3].vrb = 12;
-		experiments[3].vrc = 13;
-	*/
-	for(int i = 0; i < 8; i++)
+  while(1)
   {
-  experiments[i].temperature = Convert_temperature(experiments[i].temperature);		//Convert read Voltage to temperature
-  }
+   // To start the test program push the User Button on the board
+     User_Button();
+   // Test function that will test all the functions on the SiC PCB
+     Test_SiC();
 
-	/* Send message */
-	send_message((uint8_t *)experiments);
- }
-	
- /*Convert read voltage from the sensors to Temperature in Celsius*/
-uint16_t Convert_temperature(uint16_t Vout)
-{
-	if((Vout >= 1956) || (Vout <= 660))			//If read temperature is less than -50 or higher than 150 degress return out of range
-		return 65535;
-	else
-		{
-  //uint16_t temp = (Vout - 1567)/(-7.76);
-  uint16_t temp  =  (8.194 - pow((pow(-8.194,2) + 4*0.00262*(1324 - Vout)),0.5))/(2*(-0.00262)) + 30;
-  return temp;
-		}
-}
-void receive_OBC_message(){
-	
-	  /*##-2- Put I2C peripheral in reception process ###########################*/  
-  while(HAL_I2C_Slave_Receive(&hi2c1, (uint8_t *)aRxBuffer, RXBUFFERSIZE,100) != HAL_OK)
-  {
-		
-    /*If some instructions has been send then return to main*/
-   if(aRxBuffer[0] != '\0')
-		return;     
-  }
-	
-	while (HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
-  {
-  }
-		return;
-}	
- 
-
-
-void setDAC(double voltage){
-	uint32_t Vdac = voltage*TwelveBits/Vdd;
-  HAL_DAC_SetValue(&hdac, DAC1_CHANNEL_1, DAC_ALIGN_12B_R, Vdac);
-  HAL_DAC_Start(&hdac, DAC1_CHANNEL_1);
-}
-void readRollingADC(int index){
-	
-	//Calibrate ADCs in the beginning of every run
-	if(HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) != HAL_OK){
-		Error_Handler();
-	}
-
-	HAL_Delay(1);
-
-	//Start ADC reading
-	if(HAL_ADC_Start(&hadc) != HAL_OK){
-		while(1) {
-			Error_Handler();
-		}
-	}
-	
-	//Wait for EOC (end of conversion)
-	while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	//Read ADC value
-	experiments[0+index].temperature += hadc.Instance->DR;
-
-		
-	//Repeat for all channels.	
-	while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[0+index].ube += hadc.Instance->DR;
-	
-  while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[0+index].vrb += hadc.Instance->DR;
-		
-	while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[0+index].vrc += hadc.Instance->DR;
-	
-	while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[1+index].temperature += hadc.Instance->DR;
-
-	while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[1+index].ube += hadc.Instance->DR;
-	
-  while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[1+index].vrb += hadc.Instance->DR;
-		
-	while(!(hadc.Instance->ISR & ADC_ISR_EOC)){}
-	experiments[1+index].vrc += hadc.Instance->DR;
-		
 }
 
-void send_message(uint8_t * message){
-	
-	/*************************DISCLAIMER****************
-	This code for the I2C communication is not valid for communication and only
-	used for test purposes.
-	This code should be rewritten before use.
-	********************************************************/
-	if(HAL_I2C_Slave_Transmit(&hi2c1,message, (uint16_t)EXPERIMENTSIZE, 10000)!= HAL_OK)
-	{
-	  Error_Handler();
-  
- 
-	}
-	
-	 return;
-	
 }
-void SHDNLinearRegulator(bool a)
-{
-  if(a)
-  { 
-    HAL_GPIO_WritePin(SHDNLinearRegulator_GPIO_Port, SHDNLinearRegulator_Pin, GPIO_PIN_RESET);
- }
-  else
-  {
-    HAL_GPIO_WritePin(SHDNLinearRegulator_GPIO_Port, SHDNLinearRegulator_Pin, GPIO_PIN_SET);
-   
-  }
-  return;
-}
-
-void SHDNSwitchRegulator(bool a)
-{
-  if(a)
-  { 
-    HAL_GPIO_WritePin(SHDNSwitchRegulator_GPIO_Port,SHDNSwitchRegulator_Pin, GPIO_PIN_RESET);
-   }
-  else
-  {
-    HAL_GPIO_WritePin(SHDNSwitchRegulator_GPIO_Port,SHDNSwitchRegulator_Pin, GPIO_PIN_SET);
-  
-  }
-  return;
-}
-void SHDNBatteryPower(bool a)
-{
-  if(a)
-  { 
-    HAL_GPIO_WritePin(BatteryPowerBus_GPIO_Port, BatteryPowerBus_Pin, GPIO_PIN_RESET);
-   }
-  else
-  {
-    HAL_GPIO_WritePin(BatteryPowerBus_GPIO_Port, BatteryPowerBus_Pin, GPIO_PIN_SET);
-  
-  }
-  return;
-}
-void SHDNPowerPiezo5V(bool a)
-
-{
-  if(a)
-  { 
-    HAL_GPIO_WritePin(PowerPiezo5V_GPIO_Port, PowerPiezo5V_Pin, GPIO_PIN_RESET);
-   }
-  else
-  {
-    HAL_GPIO_WritePin(PowerPiezo5V_GPIO_Port, PowerPiezo5V_Pin, GPIO_PIN_SET);
-;
-  }
-  return;
-}
-
 
 /** System Clock Configuration
-Code auto generated by CubeMX
 */
 void SystemClock_Config(void)
 {
@@ -336,132 +119,306 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
-  __HAL_RCC_PWR_CLK_ENABLE();
-
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI
-                              |RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV4;
+    /**Initializes the CPU, AHB and APB busses clocks 
+    */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-  RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_3;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-  HAL_RCC_OscConfig(&RCC_OscInitStruct);
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
+    /**Initializes the CPU, AHB and APB busses clocks 
+    */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0);
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
-  HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
+    /**Enables the Clock Security System 
+    */
+  HAL_RCC_EnableCSS();
+
+    /**Configure the Systick interrupt time 
+    */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
+    /**Configure the Systick 
+    */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-
-void SystemPower_Config(void)
+/* ADC1 init function */
+static void MX_ADC1_Init(void)
 {
-	//Used before entering power STOP mode.
-	//Should be revised, could be optimized. 
 
-  GPIO_InitTypeDef GPIO_InitStructure;
+  ADC_MultiModeTypeDef multimode;
+  ADC_ChannelConfTypeDef sConfig;
 
-  /* Enable Ultra low power mode */
-  HAL_PWREx_EnableUltraLowPower();
-  
-  /* Enable the fast wake up from Ultra low power mode */
-  HAL_PWREx_EnableFastWakeUp();
-
-  /* Select HSI as system clock source after Wake Up from Stop mode */
-  __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
-  
-  /* Enable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-
-  /* Configure all GPIO port pins in Analog Input mode (floating input trigger OFF) */
-  GPIO_InitStructure.Pin = GPIO_PIN_All;
-  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure); 
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
-
-  /* Disable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_DISABLE();
-  __HAL_RCC_GPIOB_CLK_DISABLE();
-  __HAL_RCC_GPIOC_CLK_DISABLE();
-  __HAL_RCC_GPIOD_CLK_DISABLE();
-  __HAL_RCC_GPIOH_CLK_DISABLE();
-
-}
-
-void Error_Handler(void){
-
-	HAL_GPIO_WritePin(LD_G_GPIO_Port, LD_G_Pin, GPIO_PIN_SET);
-	return;
-
-}
-void check_OBC_message(void)
-{
-	
-	if(strcmp(aRxBuffer, "SHDNLinear") == 0)
-	{
-		SHDNLinearRegulator(true);
-		return;
-	}
-		if(strcmp(aRxBuffer, "SHDNSwitch") == 0)
-	{
-		SHDNSwitchRegulator(true);
-		return;
-	}
-		if(strcmp(aRxBuffer, "SHDNPowerPiezo5V") == 0)
-	{
-		SHDNPowerPiezo5V(true);
-		return;
-	}
-	if(strcmp(aRxBuffer, "SHDNBatteryPower") == 0)
-	{
-		SHDNBatteryPower(true);
-		return;
-	}
-			if(strcmp(aRxBuffer, "StartExperiment") == 0)
-	{
-		SHDNBatteryPower(false);
-		SHDNLinearRegulator(false);
-		SHDNSwitchRegulator(false);
-		StartExperiments();
-		return;
-	}
-	else return;
-}
-static void Flush_Buffer(uint8_t* pBuffer, uint16_t BufferLength)
-{
-  while (BufferLength--)
+    /**Common config 
+    */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
-    *pBuffer = 0;
-
-    pBuffer++;
+    Error_Handler();
   }
+
+    /**Configure the ADC multi-mode 
+    */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+    /**Configure Regular Channel 
+    */
+  sConfig.Channel = ADC_CHANNEL_2;
+  sConfig.Rank = 1;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /*
+sConfig.Channel = ADC_CHANNEL_3;
+	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK){
+		 Error_Handler();
+	}
+	
+		sConfig.Channel = ADC_CHANNEL_5;
+	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK){
+		 Error_Handler();
+	}
+		sConfig.Channel = ADC_CHANNEL_6;
+	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK){
+		 Error_Handler();
+	}
+		sConfig.Channel = ADC_CHANNEL_7;
+	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK){
+		 Error_Handler();
+	}
+	
+		sConfig.Channel = ADC_CHANNEL_8;
+	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK){
+		 Error_Handler();
+	}
+		 
+	sConfig.Channel = ADC_CHANNEL_9;
+	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK){
+		 Error_Handler();
+	}  
+*/
 }
+
+/* DAC init function */
+static void MX_DAC_Init(void)
+{
+
+  DAC_ChannelConfTypeDef sConfig;
+
+    /**DAC Initialization 
+    */
+  hdac.Instance = DAC;
+  if (HAL_DAC_Init(&hdac) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+    /**DAC channel OUT1 config 
+    */
+  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
+  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+  if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+/* I2C1 init function */
+static void MX_I2C1_Init(void)
+{
+
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x2000090E;
+  hi2c1.Init.OwnAddress1 = 0x20;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+    /**Configure Analogue filter 
+    */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+    /**Configure Digital filter 
+    */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+/** Configure pins as 
+        * Analog 
+        * Input 
+        * Output
+        * EVENT_OUT
+        * EXTI
+     PA5   ------> SPI1_SCK
+     PA6   ------> SPI1_MISO
+     PA7   ------> SPI1_MOSI
+     PA11   ------> USB_DM
+     PA12   ------> USB_DP
+*/
+static void MX_GPIO_Init(void)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, CS_I2C_SPI_Pin|LD4_Pin|LD3_Pin|LD5_Pin 
+                          |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin 
+                          |LD6_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, SHDNLinear_Pin|SHDNSwitch_Pin|BatteryPowerBus_Pin|PowerPiezo5V_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pins : DRDY_Pin MEMS_INT3_Pin MEMS_INT4_Pin MEMS_INT1_Pin 
+                           MEMS_INT2_Pin */
+  GPIO_InitStruct.Pin = DRDY_Pin|MEMS_INT3_Pin|MEMS_INT4_Pin|MEMS_INT1_Pin 
+                          |MEMS_INT2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : CS_I2C_SPI_Pin LD4_Pin LD3_Pin LD5_Pin 
+                           LD7_Pin LD9_Pin LD10_Pin LD8_Pin 
+                           LD6_Pin */
+  GPIO_InitStruct.Pin = CS_I2C_SPI_Pin|LD4_Pin|LD3_Pin|LD5_Pin 
+                          |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin 
+                          |LD6_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : B1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SPI1_SCK_Pin SPI1_MISO_Pin SPI1_MISOA7_Pin */
+  GPIO_InitStruct.Pin = SPI1_SCK_Pin|SPI1_MISO_Pin|SPI1_MISOA7_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SHDNLinear_Pin SHDNSwitch_Pin BatteryPowerBus_Pin */
+  GPIO_InitStruct.Pin = SHDNLinear_Pin|SHDNSwitch_Pin|BatteryPowerBus_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PowerPiezo5V_Pin */
+  GPIO_InitStruct.Pin = PowerPiezo5V_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(PowerPiezo5V_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : DM_Pin DP_Pin */
+  GPIO_InitStruct.Pin = DM_Pin|DP_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF14_USB;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+}
+
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  None
+  * @retval None
+  */
+void Error_Handler(void)
+{
+    HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_SET);
+  /* USER CODE BEGIN Error_Handler */
+  /* User can add his own implementation to report the HAL error return state */
+ 
+  /* USER CODE END Error_Handler */ 
+    return;
+}
+
 #ifdef USE_FULL_ASSERT
 
 /**
